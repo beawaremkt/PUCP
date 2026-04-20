@@ -27,9 +27,9 @@ function App() {
 
   return (
     <AppProvider activeTab={activeTab} setActiveTab={setActiveTab}>
-      <div className="min-h-screen bg-white flex">
+      <div className="h-screen bg-white flex overflow-hidden">
         {/* Sidebar Navigation */}
-        <div className="w-64 bg-gray-200 border-r border-gray-400 flex flex-col">
+        <div className="w-64 flex-shrink-0 bg-gray-200 border-r border-gray-400 flex flex-col">
           {/* Title */}
           <div className="p-6 border-b border-gray-400 text-center">
             <img src={PUCPLogo} alt="PUCP Logo" className="w-full max-w-[180px] mx-auto mb-4" />
@@ -58,7 +58,7 @@ function App() {
           </div>
 
           {/* Manual Button */}
-          <div className="p-4 border-t border-gray-400">
+          <div className="p-4 border-t border-gray-400 mt-auto">
             <a
               href="/docs/userguide.html"
               target="_blank"
@@ -74,7 +74,7 @@ function App() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 bg-white">
+        <div className="flex-1 bg-white overflow-y-auto">
           <ActiveComponent />
         </div>
       </div>
