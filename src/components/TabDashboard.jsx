@@ -2,7 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, TrendingUp, DollarSign, Percent, FileDown, FileSpreadsheet, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useCalculations } from '../hooks/useCalculations';
 import { useApp } from '../context/AppContext';
@@ -28,132 +28,147 @@ const TabDashboard = () => {
 
   // Export to Excel
   const exportToExcel = (data, filename) => {
-    if (!data || data.length === 0) return;
-    const ws = XLSX.utils.json_to_sheet(data);
+    if (!data) return;
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+    Object.keys(data).forEach(key => {
+      if (data[key] && data[key].length > 0) {
+        const ws = XLSX.utils.json_to_sheet(data[key]);
+        XLSX.utils.book_append_sheet(wb, ws, key);
+      } else {
+        const ws = XLSX.utils.json_to_sheet([{ Mensaje: `Sin datos en ${key}` }]);
+        XLSX.utils.book_append_sheet(wb, ws, key);
+      }
+    });
     XLSX.writeFile(wb, `${filename}.xlsx`);
   };
 
   // Export to PDF
   const exportToPDF = () => {
-    const doc = new jsPDF();
-    const projectName = state.acta.nombreProyecto || 'Proyecto';
-    
-    // Title
-    doc.setFontSize(16);
-    doc.setTextColor(30, 58, 95);
-    doc.text('CALCULADORA DE IMPACTO: LÍDERES DIGITALES', 14, 20);
-    
-    // Project Info
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Proyecto: ${state.acta.nombreProyecto || 'N/A'}`, 14, 35);
-    doc.text(`Unidad/Facultad: ${state.acta.unidad || 'N/A'}`, 14, 42);
-    
-    // KPIs Table
-    const kpiData = [
-      ['Inversión Total', `S/ ${calcs.inversionTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`],
-      ['Ahorro Financiero Anual', `S/ ${calcs.ahorroFinancieroAnual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`],
-      ['ROI', `${calcs.roi.toFixed(0)}%`],
-      ['Horas Liberadas al Año', `${calcs.horasLiberadasAlAno.toFixed(1)}`]
-    ];
-    
-    doc.setFontSize(12);
-    doc.text('INDICADORES CLAVE', 14, 55);
-    doc.autoTable({
-      startY: 60,
-      head: [['Indicador', 'Valor']],
-      body: kpiData,
-      theme: 'striped',
-      headStyles: { fillColor: [30, 58, 95] },
-      margin: { left: 14, right: 14 }
-    });
-    
-    // Cualitativas Table
-    let finalY = doc.lastAutoTable.finalY + 15;
-    if (calcs.cualitativasPromedio.length > 0) {
+    try {
+      const doc = new jsPDF();
+      const projectName = state.acta?.nombreProyecto || 'Proyecto';
+      
+      // Title
+      doc.setFontSize(16);
+      doc.setTextColor(30, 58, 95);
+      doc.text('CALCULADORA DE IMPACTO: LIDERES DIGITALES', 14, 20);
+      
+      // Project Info
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Proyecto: ${projectName}`, 14, 35);
+      doc.text(`Unidad/Facultad: ${state.acta?.unidad || 'N/A'}`, 14, 42);
+      
+      // KPIs Table
+      const kpiData = [
+        ['Inversión Total', `S/ ${calcs.inversionTotal?.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || '0.00'}`],
+        ['Ahorro Financiero Anual', `S/ ${calcs.ahorroFinancieroAnual?.toLocaleString('es-PE', { minimumFractionDigits: 2 }) || '0.00'}`],
+        ['ROI', `${calcs.roi?.toFixed(0) || '0'}%`],
+        ['Horas Liberadas al Año', `${calcs.horasLiberadasAlAno?.toFixed(1) || '0.0'}`]
+      ];
+      
       doc.setFontSize(12);
-      doc.text('IMPACTO CUALITATIVO', 14, finalY);
-      const cualitativaData = calcs.cualitativasPromedio.map(c => [
-        c.variable,
-        c.antes.toFixed(2),
-        c.despues.toFixed(2),
-        (c.despues - c.antes).toFixed(2)
-      ]);
-      doc.autoTable({
-        startY: finalY + 5,
-        head: [['Variable', 'Antes', 'Después', 'Cambio']],
-        body: cualitativaData,
+      doc.text('INDICADORES CLAVE', 14, 55);
+      autoTable(doc, {
+        startY: 60,
+        head: [['Indicador', 'Valor']],
+        body: kpiData,
         theme: 'striped',
         headStyles: { fillColor: [30, 58, 95] },
         margin: { left: 14, right: 14 }
       });
+      
+      let finalY = (doc.lastAutoTable?.finalY || 60) + 15;
+      
+      // Cualitativas Table
+      if (calcs.cualitativasPromedio?.length > 0) {
+        doc.setFontSize(12);
+        doc.text('IMPACTO CUALITATIVO', 14, finalY);
+        const cualitativaData = calcs.cualitativasPromedio.map(c => [
+          c.variable || '',
+          c.antes?.toFixed(2) || '0.00',
+          c.despues?.toFixed(2) || '0.00',
+          ((c.despues || 0) - (c.antes || 0)).toFixed(2)
+        ]);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [['Variable', 'Antes', 'Después', 'Cambio']],
+          body: cualitativaData,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 58, 95] },
+          margin: { left: 14, right: 14 }
+        });
+        finalY = (doc.lastAutoTable?.finalY || finalY) + 15;
+      }
+      
+      // Cuantitativas Table
+      if (calcs.cuantitativasData?.length > 0) {
+        doc.setFontSize(12);
+        doc.text('IMPACTO CUANTITATIVO', 14, finalY);
+        const cuantitativaData = calcs.cuantitativasData.map(c => [
+          c.variable || '',
+          `${c.antes?.toFixed(2) || '0.00'} ${c.unidad || ''}`,
+          `${c.despues?.toFixed(2) || '0.00'} ${c.unidad || ''}`,
+          `${((c.despues || 0) - (c.antes || 0)).toFixed(2)} ${c.unidad || ''}`
+        ]);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [['Variable', 'Antes', 'Después', 'Cambio']],
+          body: cuantitativaData,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 58, 95] },
+          margin: { left: 14, right: 14 }
+        });
+        finalY = (doc.lastAutoTable?.finalY || finalY) + 15;
+      }
+      
+      // Horas Table
+      if (state.horas?.length > 0) {
+        doc.setFontSize(12);
+        doc.text('REGISTRO DE HORAS', 14, finalY);
+        const horasData = state.horas.map(h => [
+          h.fecha || '',
+          h.tipo || '',
+          h.horas || 0,
+          h.costo ? h.costo.toFixed(2) : '0.00',
+          h.responsable || ''
+        ]);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [['Fecha', 'Tipo', 'Horas', 'Total (S/)', 'Responsable']],
+          body: horasData,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 58, 95] },
+          margin: { left: 14, right: 14 }
+        });
+        finalY = (doc.lastAutoTable?.finalY || finalY) + 15;
+      }
+      
+      // Licencias Table
+      if (state.licencias?.length > 0) {
+        doc.setFontSize(12);
+        doc.text('REGISTRO DE LICENCIAS', 14, finalY);
+        const licenciasData = state.licencias.map(l => [
+          l.fecha || '',
+          l.nombre || '',
+          l.costo ? l.costo.toFixed(2) : '0.00',
+          l.responsable || ''
+        ]);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [['Fecha', 'Licencia', 'Costo (S/)', 'Responsable']],
+          body: licenciasData,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 58, 95] },
+          margin: { left: 14, right: 14 }
+        });
+      }
+      
+      doc.save(`${projectName.replace(/\s+/g, '_')}_informe.pdf`);
+    } catch (error) {
+      console.error("Error al exportar PDF:", error);
+      alert("Hubo un problema al generar el PDF. Asegúrese de haber llenado los datos iniciales.");
     }
-    
-    // Cuantitativas Table
-    finalY = doc.lastAutoTable.finalY + 15;
-    if (calcs.cuantitativasData.length > 0) {
-      doc.setFontSize(12);
-      doc.text('IMPACTO CUANTITATIVO', 14, finalY);
-      const cuantitativaData = calcs.cuantitativasData.map(c => [
-        c.variable,
-        `${c.antes.toFixed(2)} ${c.unidad || ''}`,
-        `${c.despues.toFixed(2)} ${c.unidad || ''}`,
-        `${(c.despues - c.antes).toFixed(2)} ${c.unidad || ''}`
-      ]);
-      doc.autoTable({
-        startY: finalY + 5,
-        head: [['Variable', 'Antes', 'Después', 'Cambio']],
-        body: cuantitativaData,
-        theme: 'striped',
-        headStyles: { fillColor: [30, 58, 95] },
-        margin: { left: 14, right: 14 }
-      });
-    }
-    
-    // Horas Table
-    finalY = doc.lastAutoTable.finalY + 15;
-    if (state.horas.length > 0) {
-      doc.setFontSize(12);
-      doc.text('REGISTRO DE HORAS', 14, finalY);
-      const horasData = state.horas.map(h => [
-        h.actividad,
-        h.personas,
-        h.horas,
-        h.total.toFixed(2)
-      ]);
-      doc.autoTable({
-        startY: finalY + 5,
-        head: [['Actividad', 'Personas', 'Horas', 'Total']],
-        body: horasData,
-        theme: 'striped',
-        headStyles: { fillColor: [30, 58, 95] },
-        margin: { left: 14, right: 14 }
-      });
-    }
-    
-    // Licencias Table
-    finalY = doc.lastAutoTable.finalY + 15;
-    if (state.licencias.length > 0) {
-      doc.setFontSize(12);
-      doc.text('REGISTRO DE LICENCIAS', 14, finalY);
-      const licenciasData = state.licencias.map(l => [
-        l.nombre,
-        l.costo,
-        l.periodo
-      ]);
-      doc.autoTable({
-        startY: finalY + 5,
-        head: [['Licencia', 'Costo (S/)', 'Periodo']],
-        body: licenciasData,
-        theme: 'striped',
-        headStyles: { fillColor: [30, 58, 95] },
-        margin: { left: 14, right: 14 }
-      });
-    }
-    
-    doc.save(`${projectName.replace(/\s+/g, '_')}_informe.pdf`);
   };
 
   // Get export data
@@ -180,15 +195,17 @@ const TabDashboard = () => {
         cambio: (c.despues - c.antes).toFixed(2)
       })),
       horas: state.horas.map(h => ({
-        actividad: h.actividad,
-        personas: h.personas,
+        fecha: h.fecha,
+        tipo: h.tipo,
         horas: h.horas,
-        total: h.total.toFixed(2)
+        total: h.costo ? h.costo.toFixed(2) : '0.00',
+        responsable: h.responsable
       })),
       licencias: state.licencias.map(l => ({
+        fecha: l.fecha,
         nombre: l.nombre,
-        costo: l.costo,
-        periodo: l.periodo
+        costo: l.costo ? l.costo.toFixed(2) : '0.00',
+        responsable: l.responsable
       }))
     };
   };
@@ -200,7 +217,7 @@ const TabDashboard = () => {
     
     switch (format) {
       case 'csv':
-        exportToCSV([...data.kpi, ...data.cualitativas, ...data.cuantitativas], filename);
+        exportToCSV(data.kpi, filename);
         break;
       case 'excel':
         exportToExcel({
