@@ -48,12 +48,14 @@ const TabRegistroCuantitativo = () => {
   };
 
   const handleSubmit = () => {
+    const hrs = parseFloat(form.horas) || 0;
+    const trf = parseFloat(form.tarifa) || 0;
     addEsfuerzoOperativo({
       momento: form.momento,
       puesto: form.puesto,
-      horas: parseFloat(form.horas),
-      tarifa: parseFloat(form.tarifa),
-      costo: parseFloat(form.horas) * parseFloat(form.tarifa),
+      horas: hrs,
+      tarifa: trf,
+      costo: hrs * trf,
     });
     setModalOpen(false);
     setForm({ momento: 'Antes de la implementación', puesto: '', horas: 0, tarifa: 0 });
@@ -79,7 +81,7 @@ const TabRegistroCuantitativo = () => {
     addVariableCualitativa({
       momento: formCuali.momento,
       variable: formCuali.variable,
-      calificacion: parseInt(formCuali.calificacion),
+      calificacion: parseInt(formCuali.calificacion) || 1,
       impacto: formCuali.impacto,
     });
 
@@ -106,7 +108,7 @@ const TabRegistroCuantitativo = () => {
     addVariableCuantitativa({
       momento: formCuant.momento,
       variable: formCuant.variable,
-      valor: parseFloat(formCuant.valor),
+      valor: parseFloat(formCuant.valor) || 0,
       unidad: formCuant.unidad,
       impacto: formCuant.impacto,
     });

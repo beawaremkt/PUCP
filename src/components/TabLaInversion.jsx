@@ -26,9 +26,9 @@ const TabLaInversion = () => {
     addHora({
       fecha: formHoras.fecha,
       tipo: formHoras.tipo,
-      horas: parseFloat(formHoras.horas),
-      tarifa: parseFloat(formHoras.tarifa),
-      costo: parseFloat(formHoras.horas) * parseFloat(formHoras.tarifa),
+      horas: parseFloat(formHoras.horas) || 0,
+      tarifa: parseFloat(formHoras.tarifa) || 0,
+      costo: (parseFloat(formHoras.horas) || 0) * (parseFloat(formHoras.tarifa) || 0),
       responsable: formHoras.responsable,
     });
     setModalHorasOpen(false);
@@ -39,7 +39,7 @@ const TabLaInversion = () => {
     addLicencia({
       fecha: formLicencias.fecha,
       nombre: formLicencias.nombre,
-      costo: parseFloat(formLicencias.costo),
+      costo: parseFloat(formLicencias.costo) || 0,
       responsable: formLicencias.responsable,
     });
     setModalLicenciasOpen(false);
