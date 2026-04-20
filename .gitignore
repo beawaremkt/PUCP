@@ -44,3 +44,4 @@ coverage
 .cache
 .temp
 qwen-code
+.qwen

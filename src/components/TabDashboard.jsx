@@ -1,12 +1,223 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { Clock, TrendingUp, DollarSign, Percent } from 'lucide-react';
+import { Clock, TrendingUp, DollarSign, Percent, FileDown, FileSpreadsheet, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { useCalculations } from '../hooks/useCalculations';
 import { useApp } from '../context/AppContext';
 
 const TabDashboard = () => {
   const { state } = useApp();
   const calcs = useCalculations();
+
+  // Export to CSV
+  const exportToCSV = (data, filename) => {
+    if (!data || data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csv = [
+      headers.join(','),
+      ...data.map(row => headers.map(h => JSON.stringify(row[h])).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.csv`;
+    link.click();
+  };
+
+  // Export to Excel
+  const exportToExcel = (data, filename) => {
+    if (!data || data.length === 0) return;
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const projectName = state.acta.nombreProyecto || 'Proyecto';
+    
+    // Title
+    doc.setFontSize(16);
+    doc.setTextColor(30, 58, 95);
+    doc.text('CALCULADORA DE IMPACTO: LÍDERES DIGITALES', 14, 20);
+    
+    // Project Info
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Proyecto: ${state.acta.nombreProyecto || 'N/A'}`, 14, 35);
+    doc.text(`Unidad/Facultad: ${state.acta.unidad || 'N/A'}`, 14, 42);
+    
+    // KPIs Table
+    const kpiData = [
+      ['Inversión Total', `S/ ${calcs.inversionTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`],
+      ['Ahorro Financiero Anual', `S/ ${calcs.ahorroFinancieroAnual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`],
+      ['ROI', `${calcs.roi.toFixed(0)}%`],
+      ['Horas Liberadas al Año', `${calcs.horasLiberadasAlAno.toFixed(1)}`]
+    ];
+    
+    doc.setFontSize(12);
+    doc.text('INDICADORES CLAVE', 14, 55);
+    doc.autoTable({
+      startY: 60,
+      head: [['Indicador', 'Valor']],
+      body: kpiData,
+      theme: 'striped',
+      headStyles: { fillColor: [30, 58, 95] },
+      margin: { left: 14, right: 14 }
+    });
+    
+    // Cualitativas Table
+    let finalY = doc.lastAutoTable.finalY + 15;
+    if (calcs.cualitativasPromedio.length > 0) {
+      doc.setFontSize(12);
+      doc.text('IMPACTO CUALITATIVO', 14, finalY);
+      const cualitativaData = calcs.cualitativasPromedio.map(c => [
+        c.variable,
+        c.antes.toFixed(2),
+        c.despues.toFixed(2),
+        (c.despues - c.antes).toFixed(2)
+      ]);
+      doc.autoTable({
+        startY: finalY + 5,
+        head: [['Variable', 'Antes', 'Después', 'Cambio']],
+        body: cualitativaData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 95] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    // Cuantitativas Table
+    finalY = doc.lastAutoTable.finalY + 15;
+    if (calcs.cuantitativasData.length > 0) {
+      doc.setFontSize(12);
+      doc.text('IMPACTO CUANTITATIVO', 14, finalY);
+      const cuantitativaData = calcs.cuantitativasData.map(c => [
+        c.variable,
+        `${c.antes.toFixed(2)} ${c.unidad || ''}`,
+        `${c.despues.toFixed(2)} ${c.unidad || ''}`,
+        `${(c.despues - c.antes).toFixed(2)} ${c.unidad || ''}`
+      ]);
+      doc.autoTable({
+        startY: finalY + 5,
+        head: [['Variable', 'Antes', 'Después', 'Cambio']],
+        body: cuantitativaData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 95] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    // Horas Table
+    finalY = doc.lastAutoTable.finalY + 15;
+    if (state.horas.length > 0) {
+      doc.setFontSize(12);
+      doc.text('REGISTRO DE HORAS', 14, finalY);
+      const horasData = state.horas.map(h => [
+        h.actividad,
+        h.personas,
+        h.horas,
+        h.total.toFixed(2)
+      ]);
+      doc.autoTable({
+        startY: finalY + 5,
+        head: [['Actividad', 'Personas', 'Horas', 'Total']],
+        body: horasData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 95] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    // Licencias Table
+    finalY = doc.lastAutoTable.finalY + 15;
+    if (state.licencias.length > 0) {
+      doc.setFontSize(12);
+      doc.text('REGISTRO DE LICENCIAS', 14, finalY);
+      const licenciasData = state.licencias.map(l => [
+        l.nombre,
+        l.costo,
+        l.periodo
+      ]);
+      doc.autoTable({
+        startY: finalY + 5,
+        head: [['Licencia', 'Costo (S/)', 'Periodo']],
+        body: licenciasData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 95] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    doc.save(`${projectName.replace(/\s+/g, '_')}_informe.pdf`);
+  };
+
+  // Get export data
+  const getDashboardData = () => {
+    const projectName = state.acta.nombreProyecto || 'Proyecto';
+    return {
+      kpi: [
+        { indicador: 'Inversión Total', valor: calcs.inversionTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 }) },
+        { indicador: 'Ahorro Financiero Anual', valor: calcs.ahorroFinancieroAnual.toLocaleString('es-PE', { minimumFractionDigits: 2 }) },
+        { indicador: 'ROI', valor: `${calcs.roi.toFixed(0)}%` },
+        { indicador: 'Horas Liberadas al Año', valor: calcs.horasLiberadasAlAno.toFixed(1) }
+      ],
+      cualitativas: calcs.cualitativasPromedio.map(c => ({
+        variable: c.variable,
+        antes: c.antes.toFixed(2),
+        despues: c.despues.toFixed(2),
+        cambio: (c.despues - c.antes).toFixed(2)
+      })),
+      cuantitativas: calcs.cuantitativasData.map(c => ({
+        variable: c.variable,
+        antes: c.antes.toFixed(2),
+        despues: c.despues.toFixed(2),
+        unidad: c.unidad || '',
+        cambio: (c.despues - c.antes).toFixed(2)
+      })),
+      horas: state.horas.map(h => ({
+        actividad: h.actividad,
+        personas: h.personas,
+        horas: h.horas,
+        total: h.total.toFixed(2)
+      })),
+      licencias: state.licencias.map(l => ({
+        nombre: l.nombre,
+        costo: l.costo,
+        periodo: l.periodo
+      }))
+    };
+  };
+
+  const handleExport = (format) => {
+    const data = getDashboardData();
+    const projectName = state.acta.nombreProyecto || 'dashboard';
+    const filename = `${projectName.replace(/\s+/g, '_')}_dashboard`;
+    
+    switch (format) {
+      case 'csv':
+        exportToCSV([...data.kpi, ...data.cualitativas, ...data.cuantitativas], filename);
+        break;
+      case 'excel':
+        exportToExcel({
+          KPIs: data.kpi,
+          Cualitativas: data.cualitativas,
+          Cuantitativas: data.cuantitativas,
+          Horas: data.horas,
+          Licencias: data.licencias
+        }, filename);
+        break;
+      case 'pdf':
+        exportToPDF();
+        break;
+      default:
+        break;
+    }
+  };
 
   const cualitativasChartData = calcs.cualitativasPromedio.map(c => ({
     name: c.variable,
@@ -34,6 +245,32 @@ const TabDashboard = () => {
         <h1 className="text-2xl font-bold text-gray-800 mx-auto">
           CALCULADORA DE IMPACTO: LÍDERES DIGITALES
         </h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleExport('pdf')}
+            className="flex items-center gap-2 px-3 py-2 bg-pucp-blue text-white rounded hover:bg-blue-800 transition-colors"
+            title="Exportar a PDF"
+          >
+            <FileText size={18} />
+            <span className="text-sm">PDF</span>
+          </button>
+          <button
+            onClick={() => handleExport('excel')}
+            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            title="Exportar a Excel"
+          >
+            <FileSpreadsheet size={18} />
+            <span className="text-sm">Excel</span>
+          </button>
+          <button
+            onClick={() => handleExport('csv')}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            title="Exportar a CSV"
+          >
+            <FileDown size={18} />
+            <span className="text-sm">CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Project Info - Full width */}
