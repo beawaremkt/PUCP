@@ -27,13 +27,24 @@ const TabActaNacimiento = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="bg-pucp-blue text-white text-center py-4 mb-6">
-        <h1 className="text-xl font-bold">ACTA DE NACIMIENTO DEL PROYECTO</h1>
-        <p className="text-sm mt-1">Metodología de Medición de Impacto - OTD PUCP</p>
+      <div className="mb-6">
+        <div className="bg-pucp-blue text-white text-center py-4">
+          <h1 className="text-xl font-bold">ACTA DE NACIMIENTO DEL PROYECTO</h1>
+          <p className="text-sm mt-1">Metodología de Medición de Impacto - OTD PUCP</p>
+        </div>
+        <div className="text-right mt-2">
+          <button
+            onClick={() => window.print()}
+            className="print:hidden text-pucp-blue/80 hover:text-pucp-blue text-xs font-medium transition-colors"
+            title="Imprimir Acta de Nacimiento"
+          >
+            Imprimir
+          </button>
+        </div>
       </div>
 
       {/* Instructions */}
-      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 text-sm text-yellow-800">
+      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 text-sm text-yellow-800 print:hidden">
         <strong>Instrucciones para el Líder Digital:</strong> Este documento es el "Punto Cero" de tu proyecto.
         Llenar esta información hoy te permitirá demostrar mañana con datos duros cuánto valor, tiempo y dinero
         le has ahorrado a tu unidad y a la Universidad. ¡Haz visible tu esfuerzo!

@@ -5,6 +5,74 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Calculadora de Impacto</title>
+    <style>
+      @media print {
+        /* Hide sidebar and non-essential elements */
+        body > div > div > div:first-child,
+        .w-64,
+        nav,
+        .no-print {
+          display: none !important;
+        }
+        
+        /* Hide all buttons when printing */
+        button {
+          display: none !important;
+        }
+        
+        /* Make main content full width and properly formatted */
+        body > div > div > div:last-child,
+        body > div > div > main {
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 10mm !important;
+          overflow: visible !important;
+          height: auto !important;
+          position: static !important;
+        }
+        
+        /* Ensure the root containers don't restrict height */
+        #root,
+        #root > div,
+        #root > div > div {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        
+        /* Ensure the acta content is properly formatted */
+        body, html {
+          background: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        
+        /* Remove any background colors for printing */
+        .bg-pucp-blue {
+          background-color: #1e3a8a !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        /* Ensure text is visible */
+        .text-white {
+          color: white !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        /* Ensure proper page breaks */
+        .mb-8 {
+          page-break-inside: avoid;
+        }
+        
+        /* Ensure all content is visible */
+        * {
+          max-height: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
