@@ -315,6 +315,9 @@ const TabDashboard = () => {
           <p className="text-2xl font-bold mt-1 bg-black py-2">
             S/ {calcs.ahorroFinancieroAnual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
           </p>
+          <p className="text-xs text-gray-300 mt-2">
+            (Dif. costo: {calcs.diferenciaCostos} × Vol: {calcs.volumenOperaciones} × Factor: {calcs.factorConversion})
+          </p>
         </div>
 
         {/* ROI */}
